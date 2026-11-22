@@ -95,6 +95,12 @@
     <h2>제출 전 확인</h2>
     <p class="hint" style="margin-top:0">이대로 <b id="confirmN"></b>명분 응답이 제출돼요. 제출하면 되돌릴 수 없으니 한 번 더 확인해 주세요.</p>
     <div id="summary"></div>
+    <label class="f" style="margin-top:16px">응답 사이 간격</label>
+    <div class="row" style="flex-wrap:wrap">
+      <input id="gapMin" type="number" min="1" max="120" value="10" style="max-width:90px" /> 초 ~
+      <input id="gapMax" type="number" min="1" max="120" value="20" style="max-width:90px" /> 초 사이에서 무작위
+    </div>
+    <p class="hint" id="eta"></p>
     <div class="row" style="margin-top:14px">
       <button id="go">제출 시작</button>
       <button id="back" class="gray">다시 고치기</button>
@@ -108,6 +114,10 @@
     <div id="runText">준비 중…</div>
     <button id="stop" class="gray" style="margin-top:12px">멈추기</button>
     <div id="runMsg"></div>
+    <details id="logBox" style="margin-top:12px">
+      <summary>네이버 응답 기록 (문제가 생기면 이 내용을 복사해서 알려 주세요)</summary>
+      <pre id="log" style="white-space:pre-wrap;font-size:13px;background:#f3f5f2;padding:10px;border-radius:8px;margin-top:8px"></pre>
+    </details>
   </section>
 
   <footer>
@@ -136,7 +146,11 @@ async function api(path, opts = {}) {
   let data = {};
   try { data = await r.json(); } catch {}
   if (data.needCode) { $('codeBox').open = true; }
-  if (!r.ok || data.ok === false) throw new Error(data.error || `서버 오류 (${r.status})`);
+  if (!r.ok || data.ok === false) {
+    const err = new Error(data.error || `서버 오류 (${r.status})`);
+    err.steps = data.steps || [];
+    throw err;
+  }
   return data;
 }
 
@@ -253,9 +267,24 @@ $('preview').onclick = () => {
     }
     return `<p style="margin:14px 0 0;font-weight:700">${esc(q.title)}</p><table>${rows}</table>`;
   }).join('');
+  updateEta();
   $('confirmCard').classList.remove('hidden');
   $('confirmCard').scrollIntoView({ behavior: 'smooth' });
 };
+
+function gaps() {
+  let a = parseInt($('gapMin').value, 10), b = parseInt($('gapMax').value, 10);
+  if (!(a >= 1)) a = 10; if (!(b >= 1)) b = a;
+  if (b < a) [a, b] = [b, a];
+  return [Math.min(a, 120), Math.min(b, 120)];
+}
+function updateEta() {
+  if (!built) return;
+  const [a, b] = gaps();
+  const sec = (built.length - 1) * (a + b) / 2 + built.length * 2;
+  $('eta').textContent = `${built.length}명이면 약 ${Math.max(1, Math.round(sec / 60))}분 걸려요. 제출하는 동안 이 창을 닫거나 다른 탭으로 오래 옮기지 마세요.`;
+}
+document.addEventListener('input', (e) => { if (e.target.matches('#gapMin, #gapMax')) updateEta(); });
 
 $('back').onclick = () => { $('confirmCard').classList.add('hidden'); $('formCard').scrollIntoView({ behavior: 'smooth' }); };
 
@@ -264,6 +293,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 $('go').onclick = async () => {
   if (!built) return;
   const list = built, total = list.length;
+  const [gapA, gapB] = gaps();
   built = null; // 같은 응답을 두 번 제출하지 않게
   stopFlag = false;
   $('confirmCard').classList.add('hidden');
@@ -272,24 +302,36 @@ $('go').onclick = async () => {
   $('preview').disabled = true; $('load').disabled = true;
   msg('runMsg', '', '');
   let done = 0;
+  $('log').textContent = '';
+  const log = (line) => { $('log').textContent += line + '\n'; };
   for (const items of list) {
     if (stopFlag) break;
     $('runText').textContent = `${done + 1}번째 응답 제출 중… (${done}/${total} 완료)`;
     try {
-      await api('/api/submit', { method: 'POST', headers: { 'content-type': 'application/json' },
+      const out = await api('/api/submit', { method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ surveyId: survey.id, items }) });
+      if (done < 3) log(`[${done + 1}번째] ` + (out.steps || []).join(' / '));
       done++;
       $('barFill').style.width = (done / total * 100) + '%';
     } catch (e) {
+      log(`[${done + 1}번째 실패] ` + (e.steps || []).join(' / ') + ' / ' + e.message);
+      $('logBox').open = true;
       msg('runMsg', 'bad', `${done + 1}번째 응답에서 멈췄어요: ${esc(e.message)}<br>지금까지 <b>${done}명</b>분이 제출됐어요. 남은 ${total - done}명은 학생 수를 ${total - done}명으로 바꾸고 인원수도 그만큼 줄여서 다시 하면 돼요.`);
       break;
     }
-    await sleep(600);
+    if (done < total && !stopFlag) {
+      let wait = gapA + Math.floor(Math.random() * (gapB - gapA + 1));
+      while (wait > 0 && !stopFlag) {
+        $('runText').textContent = `${done}/${total}명 완료 · 다음 응답까지 ${wait}초`;
+        await sleep(1000);
+        wait--;
+      }
+    }
   }
   $('stop').classList.add('hidden');
   $('preview').disabled = false; $('load').disabled = false;
   $('runText').textContent = `${done}/${total}명 제출 완료`;
-  if (done === total) msg('runMsg', 'ok', `${total}명분 응답을 모두 제출했어요. 네이버 폼 결과 화면에서 응답 수를 확인해 보세요.`);
+  if (done === total) msg('runMsg', 'ok', `${total}명분 응답을 보냈고 네이버가 받았다고 답했어요. 네이버 폼 결과 화면을 새로고침해서 응답 수를 확인해 보세요. 숫자가 안 늘었다면 아래 "네이버 응답 기록"을 열어 내용을 복사해 알려 주세요.`);
   else if (stopFlag) msg('runMsg', 'warn', `멈췄어요. 지금까지 <b>${done}명</b>분이 제출됐어요.`);
 };
 

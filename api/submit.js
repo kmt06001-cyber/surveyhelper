@@ -28,11 +28,11 @@ export default async function handler(req, res) {
   // 학생 정보 보호: 응답 내용은 저장하거나 기록하지 않습니다.
   const clean = items.map(({ questionId, type, refId, value }) => ({ questionId, type, refId, value }));
   try {
-    await submitOne(surveyId, clean);
-    return res.status(200).json({ ok: true });
+    const { steps } = await submitOne(surveyId, clean);
+    return res.status(200).json({ ok: true, steps });
   } catch (e) {
     const msg = e instanceof UserError ? e.message : '제출하다 문제가 생겼어요.';
     if (!(e instanceof UserError)) console.error(e.message);
-    return res.status(502).json({ ok: false, error: msg });
+    return res.status(502).json({ ok: false, error: msg, steps: e.steps || [] });
   }
 }
