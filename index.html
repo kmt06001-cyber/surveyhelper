@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>네이버 폼 손들기 집계 입력기</title>
+<style>
+  :root {
+    --bg: #f6f7f4; --card: #fff; --ink: #1f2a24; --sub: #5d6b63; --line: #dfe4df;
+    --accent: #1f7a4d; --accent-soft: #e5f3ea; --warn: #b45309; --warn-soft: #fef3e2;
+    --bad: #b42318; --bad-soft: #fdecea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; font-size: 16px; line-height: 1.55; }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 18px 80px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .lead { color: var(--sub); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  .step { display: inline-block; font-size: 13px; font-weight: 700; color: var(--accent); background: var(--accent-soft);
+    border-radius: 999px; padding: 2px 10px; margin-bottom: 8px; }
+  h2 { font-size: 18px; margin: 0 0 12px; }
+  label.f { display: block; font-weight: 600; margin-bottom: 6px; }
+  input[type=text], input[type=number], input[type=password], textarea {
+    width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+  textarea { min-height: 90px; resize: vertical; }
+  .row { display: flex; gap: 10px; align-items: center; }
+  .row > input[type=text] { flex: 1; }
+  button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 10px 16px; cursor: pointer;
+    background: var(--accent); color: #fff; white-space: nowrap; }
+  button.ghost { background: #fff; color: var(--accent); border: 1px solid var(--accent); padding: 4px 10px; font-size: 14px; }
+  button.gray { background: #e8ebe8; color: var(--ink); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .hint { color: var(--sub); font-size: 14px; margin: 6px 0 0; }
+  .msg { border-radius: 10px; padding: 10px 14px; margin-top: 12px; font-size: 15px; }
+  .msg.bad { background: var(--bad-soft); color: var(--bad); }
+  .msg.warn { background: var(--warn-soft); color: var(--warn); }
+  .msg.ok { background: var(--accent-soft); color: var(--accent); }
+  .q { border-top: 1px solid var(--line); padding: 16px 0; }
+  .q:first-of-type { border-top: 0; padding-top: 4px; }
+  .q-title { font-weight: 700; margin-bottom: 10px; }
+  .tag { font-size: 12px; font-weight: 700; border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
+  .tag.req { background: var(--bad-soft); color: var(--bad); }
+  .tag.multi { background: #e8eefc; color: #2f4fb0; }
+  .opt { display: grid; grid-template-columns: 1fr 90px auto; gap: 10px; align-items: center; padding: 4px 0; }
+  .opt input { text-align: right; padding: 8px 10px; }
+  .sum { font-size: 14px; font-weight: 700; margin-top: 6px; }
+  .sum.good { color: var(--accent); } .sum.badc { color: var(--bad); }
+  details summary { cursor: pointer; color: var(--sub); font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 8px; }
+  td, th { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar { height: 12px; background: #e8ebe8; border-radius: 999px; overflow: hidden; margin: 12px 0 6px; }
+  .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .hidden { display: none !important; }
+  footer { color: var(--sub); font-size: 13px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>네이버 폼 손들기 집계 입력기</h1>
+  <p class="lead">교실에서 손들기로 센 인원수를 넣으면, 학생 수만큼 네이버 폼에 응답을 대신 제출해요.</p>
+
+  <section class="card">
+    <span class="step">1단계</span>
+    <h2>설문 링크 넣기</h2>
+    <label class="f" for="url">네이버 폼 링크</label>
+    <div class="row">
+      <input id="url" type="text" placeholder="https://naver.me/... 또는 https://form.naver.com/response/..." />
+      <button id="load">문항 불러오기</button>
+    </div>
+    <details id="codeBox" style="margin-top:12px">
+      <summary>접속 코드 (받은 경우에만 입력)</summary>
+      <input id="code" type="password" placeholder="동학년에서 정한 접속 코드" style="margin-top:8px" />
+    </details>
+    <div id="loadMsg"></div>
+  </section>
+
+  <section class="card hidden" id="formCard">
+    <span class="step">2단계</span>
+    <h2 id="surveyTitle"></h2>
+    <label class="f" for="n">응답할 학생 수</label>
+    <input id="n" type="number" min="1" max="100" value="22" style="max-width:140px" />
+    <p class="hint">객관식은 선택지별로 손든 인원을 넣어 주세요. 모두 같은 답이면 <b>전원</b> 버튼을 누르면 돼요.<br />
+      주관식은 들은 의견을 마침표(.)로 나눠 적어 주세요. 한 문장이 학생 한 명의 답이 돼요.</p>
+    <div id="surveyWarn"></div>
+    <div id="questions" style="margin-top:12px"></div>
+    <button id="preview" style="margin-top:8px">확인하기</button>
+    <div id="buildMsg"></div>
+  </section>
+
+  <section class="card hidden" id="confirmCard">
+    <span class="step">3단계</span>
+    <h2>제출 전 확인</h2>
+    <p class="hint" style="margin-top:0">이대로 <b id="confirmN"></b>명분 응답이 제출돼요. 제출하면 되돌릴 수 없으니 한 번 더 확인해 주세요.</p>
+    <div id="summary"></div>
+    <div class="row" style="margin-top:14px">
+      <button id="go">제출 시작</button>
+      <button id="back" class="gray">다시 고치기</button>
+    </div>
+  </section>
+
+  <section class="card hidden" id="runCard">
+    <span class="step">4단계</span>
+    <h2>제출 중</h2>
+    <div class="bar"><div id="barFill"></div></div>
+    <div id="runText">준비 중…</div>
+    <button id="stop" class="gray" style="margin-top:12px">멈추기</button>
+    <div id="runMsg"></div>
+  </section>
+
+  <footer>
+    손들기 집계를 옮기는 용도예요. 문항별 인원수는 정확히 들어가지만, 학생 한 명의 응답 묶음은 무작위로 짝지어져요.<br />
+    학생 이름 등 개인정보는 넣지 마세요. 이 사이트는 응답 내용을 저장하지 않아요.
+  </footer>
+</main>
+
+<script type="module">
+import { buildResponses, splitTexts, tally } from './generate.js';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
+                set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+
+let survey = null, built = null, stopFlag = false;
+$('code').value = store.get('accessCode');
+if ($('code').value) $('codeBox').open = true;
+
+function msg(el, kind, html) { $(el).innerHTML = html ? `<div class="msg ${kind}">${html}</div>` : ''; }
+function headers(extra = {}) { return { 'x-access-code': $('code').value.trim(), ...extra }; }
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: headers(opts.headers) });
+  let data = {};
+  try { data = await r.json(); } catch {}
+  if (data.needCode) { $('codeBox').open = true; }
+  if (!r.ok || data.ok === false) throw new Error(data.error || `서버 오류 (${r.status})`);
+  return data;
+}
+
+$('load').onclick = async () => {
+  const url = $('url').value.trim();
+  if (!url) return msg('loadMsg', 'bad', '설문 링크를 넣어 주세요.');
+  store.set('accessCode', $('code').value.trim());
+  $('load').disabled = true; msg('loadMsg', 'ok', '불러오는 중…');
+  try {
+    survey = await api('/api/survey?url=' + encodeURIComponent(url));
+    msg('loadMsg', 'ok', `문항 ${survey.questions.length}개를 불러왔어요.`);
+    renderSurvey();
+  } catch (e) { msg('loadMsg', 'bad', esc(e.message)); $('formCard').classList.add('hidden'); }
+  finally { $('load').disabled = false; }
+};
+
+function renderSurvey() {
+  $('surveyTitle').textContent = survey.title;
+  const warns = [];
+  if (survey.status && survey.status !== 'IN_PROGRESS') warns.push('이 설문은 지금 응답을 받는 중이 아닐 수 있어요.');
+  if (!survey.allowMultipleResponses) warns.push('이 설문은 <b>1인 1회 응답</b>으로 설정돼 있어서 여러 번 제출할 수 없어요. 설문 담당자에게 설정 변경을 요청해 주세요.');
+  if (survey.restricted) warns.push('응답할 수 있는 사람이 제한된 설문이라 제출이 거절될 수 있어요.');
+  if (survey.branching) warns.push('답에 따라 다른 문항으로 건너뛰는 설정이 있어요. 이 도구는 건너뛰기를 따르지 않고 모든 문항에 답을 넣어요.');
+  $('surveyWarn').innerHTML = warns.map((w) => `<div class="msg warn">${w}</div>`).join('');
+
+  $('questions').innerHTML = survey.questions.map((q, i) => {
+    const tags = (q.required ? '<span class="tag req">필수</span>' : '') + (q.multiSelect ? '<span class="tag multi">여러 개 선택</span>' : '');
+    let body;
+    if (!q.supported) {
+      body = `<div class="msg ${q.required ? 'bad' : 'warn'}">이 문항 형식(${esc(q.type)})은 아직 지원하지 않아요.${q.required ? ' 필수 문항이라 이 설문은 제출할 수 없어요.' : ' 비워 둔 채로 제출돼요.'}</div>`;
+    } else if (q.type === 'CHOICE') {
+      body = q.items.map((it) => `
+        <div class="opt">
+          <span>${esc(it.value)}</span>
+          <input type="number" min="0" inputmode="numeric" data-q="${q.id}" data-item="${it.id}" placeholder="0" />
+          <button class="ghost" data-all="${q.id}" data-item="${it.id}" type="button">전원</button>
+        </div>`).join('') + `<div class="sum" id="sum-${q.id}"></div>`;
+    } else {
+      body = `<textarea data-text="${q.id}" placeholder="예) 마라탕. 떡볶이. 돈가스"></textarea>
+        <div class="hint" id="cnt-${q.id}">${q.required ? '남는 학생은 "없음"으로 제출돼요.' : '남는 학생은 빈칸으로 제출돼요.'}</div>`;
+    }
+    return `<div class="q"><div class="q-title">${i + 1}. ${esc(q.title)}${tags}</div>${body}</div>`;
+  }).join('');
+  $('formCard').classList.remove('hidden');
+  $('confirmCard').classList.add('hidden');
+  updateSums();
+}
+
+function n() { return parseInt($('n').value, 10); }
+
+function updateSums() {
+  if (!survey) return;
+  for (const q of survey.questions) {
+    if (!q.supported) continue;
+    if (q.type === 'CHOICE') {
+      const total = [...document.querySelectorAll(`input[data-q="${q.id}"]`)].reduce((a, el) => a + (parseInt(el.value, 10) || 0), 0);
+      const el = $('sum-' + q.id);
+      const good = q.multiSelect ? (!q.required || total >= n()) : (q.required ? total === n() : total <= n());
+      el.className = 'sum ' + (good ? 'good' : 'badc');
+      el.textContent = q.multiSelect ? `선택 합계 ${total}` : `합계 ${total} / ${n() || 0}명`;
+    } else {
+      const c = splitTexts(document.querySelector(`textarea[data-text="${q.id}"]`).value).length;
+      $('cnt-' + q.id).textContent = `문장 ${c}개 · ` + (q.required ? '남는 학생은 "없음"으로 제출돼요.' : '남는 학생은 빈칸으로 제출돼요.');
+    }
+  }
+}
+
+document.addEventListener('input', (e) => { if (e.target.matches('#n, [data-q], [data-text]')) updateSums(); });
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-all]');
+  if (!b) return;
+  document.querySelectorAll(`input[data-q="${b.dataset.all}"]`).forEach((el) => {
+    el.value = el.dataset.item === b.dataset.item ? n() : '';
+  });
+  updateSums();
+});
+
+function collect() {
+  const inputs = {};
+  for (const q of survey.questions) {
+    if (q.type === 'CHOICE') {
+      const counts = {};
+      document.querySelectorAll(`input[data-q="${q.id}"]`).forEach((el) => {
+        const v = el.value.trim();
+        counts[el.dataset.item] = v === '' ? 0 : Number(v);
+      });
+      inputs[q.id] = { counts };
+    } else {
+      const t = document.querySelector(`textarea[data-text="${q.id}"]`);
+      inputs[q.id] = { text: t ? t.value : '' };
+    }
+  }
+  return inputs;
+}
+
+$('preview').onclick = () => {
+  const result = buildResponses(survey, n(), collect());
+  if (result.errors.length) {
+    $('confirmCard').classList.add('hidden');
+    return msg('buildMsg', 'bad', result.errors.map(esc).join('<br>'));
+  }
+  msg('buildMsg', '', '');
+  built = result.responses;
+  const t = tally(survey, built);
+  $('confirmN').textContent = built.length;
+  $('summary').innerHTML = survey.questions.filter((q) => q.supported).map((q, i) => {
+    let rows;
+    if (q.type === 'CHOICE') {
+      rows = q.items.map((it) => `<tr><td>${esc(it.value)}</td><td class="n">${t[q.id][it.id] || 0}명</td></tr>`).join('');
+    } else {
+      const lines = splitTexts(document.querySelector(`textarea[data-text="${q.id}"]`).value);
+      rows = `<tr><td>적은 의견</td><td class="n">${lines.length}개</td></tr>` +
+        (q.required ? `<tr><td>"없음"</td><td class="n">${built.length - lines.length}명</td></tr>` : '');
+    }
+    return `<p style="margin:14px 0 0;font-weight:700">${esc(q.title)}</p><table>${rows}</table>`;
+  }).join('');
+  $('confirmCard').classList.remove('hidden');
+  $('confirmCard').scrollIntoView({ behavior: 'smooth' });
+};
+
+$('back').onclick = () => { $('confirmCard').classList.add('hidden'); $('formCard').scrollIntoView({ behavior: 'smooth' }); };
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+$('go').onclick = async () => {
+  if (!built) return;
+  const list = built, total = list.length;
+  built = null; // 같은 응답을 두 번 제출하지 않게
+  stopFlag = false;
+  $('confirmCard').classList.add('hidden');
+  $('runCard').classList.remove('hidden');
+  $('stop').classList.remove('hidden');
+  $('preview').disabled = true; $('load').disabled = true;
+  msg('runMsg', '', '');
+  let done = 0;
+  for (const items of list) {
+    if (stopFlag) break;
+    $('runText').textContent = `${done + 1}번째 응답 제출 중… (${done}/${total} 완료)`;
+    try {
+      await api('/api/submit', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ surveyId: survey.id, items }) });
+      done++;
+      $('barFill').style.width = (done / total * 100) + '%';
+    } catch (e) {
+      msg('runMsg', 'bad', `${done + 1}번째 응답에서 멈췄어요: ${esc(e.message)}<br>지금까지 <b>${done}명</b>분이 제출됐어요. 남은 ${total - done}명은 학생 수를 ${total - done}명으로 바꾸고 인원수도 그만큼 줄여서 다시 하면 돼요.`);
+      break;
+    }
+    await sleep(600);
+  }
+  $('stop').classList.add('hidden');
+  $('preview').disabled = false; $('load').disabled = false;
+  $('runText').textContent = `${done}/${total}명 제출 완료`;
+  if (done === total) msg('runMsg', 'ok', `${total}명분 응답을 모두 제출했어요. 네이버 폼 결과 화면에서 응답 수를 확인해 보세요.`);
+  else if (stopFlag) msg('runMsg', 'warn', `멈췄어요. 지금까지 <b>${done}명</b>분이 제출됐어요.`);
+};
+
+$('stop').onclick = () => { stopFlag = true; $('runText').textContent = '지금 보내는 응답까지만 제출하고 멈출게요…'; };
+</script>
+</body>
+</html>
