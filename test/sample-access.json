@@ -1,0 +1,267 @@
+{
+    "title": "만족도 조사 프로그램 예시",
+    "description": "",
+    "richDescription": null,
+    "image": null,
+    "bannerImage": "_blank",
+    "status": "IN_PROGRESS",
+    "restricted": null,
+    "pages": [
+        {
+            "title": "",
+            "description": "",
+            "richDescription": null,
+            "image": null,
+            "imageDominantColor": null,
+            "questions": [
+                {
+                    "id": 2,
+                    "title": "몇 학년 인가요?",
+                    "description": "",
+                    "richDescription": null,
+                    "image": null,
+                    "type": "CHOICE",
+                    "options": {
+                        "required": true,
+                        "multiSelect": false,
+                        "customValue": false,
+                        "shuffle": false
+                    },
+                    "props": {},
+                    "extras": null,
+                    "items": [
+                        {
+                            "id": 2,
+                            "value": "1학년",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 3,
+                            "value": "2학년",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 4,
+                            "value": "3학년",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 5,
+                            "value": "4학년",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 6,
+                            "value": "5학년",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 7,
+                            "value": "6학년",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "title": "몇 반인가요?",
+                    "description": "",
+                    "richDescription": null,
+                    "image": null,
+                    "type": "CHOICE",
+                    "options": {
+                        "required": true,
+                        "multiSelect": false,
+                        "customValue": false,
+                        "shuffle": false
+                    },
+                    "props": {},
+                    "extras": null,
+                    "items": [
+                        {
+                            "id": 8,
+                            "value": "1반",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 9,
+                            "value": "2반",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 10,
+                            "value": "3반",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        }
+                    ]
+                },
+                {
+                    "id": 4,
+                    "title": "내가 제일 좋아하는 음식은 무엇인가요?",
+                    "description": "",
+                    "richDescription": [
+                        {
+                            "insert": "\t\n"
+                        }
+                    ],
+                    "image": null,
+                    "type": "CHOICE",
+                    "options": {
+                        "required": true,
+                        "multiSelect": false,
+                        "customValue": false,
+                        "shuffle": false
+                    },
+                    "props": {},
+                    "extras": null,
+                    "items": [
+                        {
+                            "id": 11,
+                            "value": "햄버거",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 12,
+                            "value": "치킨",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 13,
+                            "value": "피자",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        }
+                    ]
+                },
+                {
+                    "id": 5,
+                    "title": "내가 제일 좋아하는 음료는 무엇인가요?",
+                    "description": "",
+                    "richDescription": [
+                        {
+                            "insert": "\t\n"
+                        }
+                    ],
+                    "image": null,
+                    "type": "CHOICE",
+                    "options": {
+                        "required": true,
+                        "multiSelect": false,
+                        "customValue": false,
+                        "shuffle": false
+                    },
+                    "props": {},
+                    "extras": null,
+                    "items": [
+                        {
+                            "id": 14,
+                            "value": "콜라",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 15,
+                            "value": "주스",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        },
+                        {
+                            "id": 16,
+                            "value": "음료",
+                            "image": null,
+                            "skipOffset": null,
+                            "extras": null
+                        }
+                    ]
+                },
+                {
+                    "id": 7,
+                    "title": "내가 먹고 싶은 메뉴는 무엇인가요?",
+                    "description": "",
+                    "richDescription": null,
+                    "image": null,
+                    "type": "LONG_TEXT",
+                    "options": {
+                        "required": false,
+                        "multiSelect": false,
+                        "customValue": false,
+                        "shuffle": false
+                    },
+                    "props": {},
+                    "extras": null,
+                    "items": []
+                }
+            ],
+            "props": {},
+            "nextPageOffset": 1
+        }
+    ],
+    "options": {
+        "allowMultipleResponses": true,
+        "allowEditResponse": false,
+        "allowShareMyResponse": false,
+        "allowShareSummary": false,
+        "allowAnonymous": true,
+        "sendNotiOnSubmit": false,
+        "sendMailOnSubmit": false,
+        "maxResponses": 1000000,
+        "allowedUserIds": null,
+        "notificationEmails": null,
+        "submitPage": {
+            "title": "",
+            "message": null,
+            "richDescription": null,
+            "image": null,
+            "props": {}
+        }
+    },
+    "styles": {
+        "font": "font1",
+        "bgColor": "bgColor2",
+        "useIntro": false,
+        "skinColor": "skinColor9",
+        "showProgressBar": true,
+        "questionNumberType": "N",
+        "showProgressPeriod": true,
+        "showQuestionNumber": true,
+        "showPrivateDataWarnMessage": true
+    },
+    "extras": null,
+    "startAt": 1795337549171,
+    "endAt": null,
+    "savedAt": 1795337596367,
+    "snippet": null,
+    "createAt": 1795337549172,
+    "updateAt": 1795337596369,
+    "taToken": "5oHxaYPJQw6q6PRzZOZA8A",
+    "submitCount": 0,
+    "viewCount": 0,
+    "editable": true,
+    "privacyProtected": false,
+    "progressed": true
+}
