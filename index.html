@@ -95,7 +95,7 @@
     <h2>제출 전 확인</h2>
     <p class="hint" style="margin-top:0">이대로 <b id="confirmN"></b>명분 응답이 제출돼요. 제출하면 되돌릴 수 없으니 한 번 더 확인해 주세요.</p>
     <div id="summary"></div>
-    <label class="f" style="margin-top:16px">응답 사이 간격</label>
+    <label class="f" style="margin-top:16px">학생 한 명당 응답 작성 시간</label>
     <div class="row" style="flex-wrap:wrap">
       <input id="gapMin" type="number" min="1" max="120" value="10" style="max-width:90px" /> 초 ~
       <input id="gapMax" type="number" min="1" max="120" value="20" style="max-width:90px" /> 초 사이에서 무작위
@@ -281,7 +281,7 @@ function gaps() {
 function updateEta() {
   if (!built) return;
   const [a, b] = gaps();
-  const sec = (built.length - 1) * (a + b) / 2 + built.length * 2;
+  const sec = built.length * ((a + b) / 2 + 4);
   $('eta').textContent = `${built.length}명이면 약 ${Math.max(1, Math.round(sec / 60))}분 걸려요. 제출하는 동안 이 창을 닫거나 다른 탭으로 오래 옮기지 마세요.`;
 }
 document.addEventListener('input', (e) => { if (e.target.matches('#gapMin, #gapMax')) updateEta(); });
@@ -306,11 +306,24 @@ $('go').onclick = async () => {
   const log = (line) => { $('log').textContent += line + '\n'; };
   for (const items of list) {
     if (stopFlag) break;
-    $('runText').textContent = `${done + 1}번째 응답 제출 중… (${done}/${total} 완료)`;
     try {
+      // 1) 학생 한 명이 설문을 연 것처럼
+      $('runText').textContent = `${done + 1}번째 학생: 설문 여는 중… (${done}/${total} 완료)`;
+      const opened = await api('/api/open', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ surveyId: survey.id }) });
+      // 2) 응답을 작성하는 시간만큼 기다리기
+      let wait = gapA + Math.floor(Math.random() * (gapB - gapA + 1));
+      while (wait > 0 && !stopFlag) {
+        $('runText').textContent = `${done + 1}번째 학생: 응답 작성 중… ${wait}초 뒤 제출 (${done}/${total} 완료)`;
+        await sleep(1000);
+        wait--;
+      }
+      if (stopFlag) break;
+      // 3) 제출
+      $('runText').textContent = `${done + 1}번째 학생: 제출 중… (${done}/${total} 완료)`;
       const out = await api('/api/submit', { method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ surveyId: survey.id, items }) });
-      if (done < 3) log(`[${done + 1}번째] ` + (out.steps || []).join(' / '));
+        body: JSON.stringify({ surveyId: survey.id, items, taToken: opened.taToken, cookie: opened.cookie }) });
+      if (done < 3) log(`[${done + 1}번째] ` + [...(opened.steps || []), ...(out.steps || [])].join(' / '));
       done++;
       $('barFill').style.width = (done / total * 100) + '%';
     } catch (e) {
@@ -319,14 +332,7 @@ $('go').onclick = async () => {
       msg('runMsg', 'bad', `${done + 1}번째 응답에서 멈췄어요: ${esc(e.message)}<br>지금까지 <b>${done}명</b>분이 제출됐어요. 남은 ${total - done}명은 학생 수를 ${total - done}명으로 바꾸고 인원수도 그만큼 줄여서 다시 하면 돼요.`);
       break;
     }
-    if (done < total && !stopFlag) {
-      let wait = gapA + Math.floor(Math.random() * (gapB - gapA + 1));
-      while (wait > 0 && !stopFlag) {
-        $('runText').textContent = `${done}/${total}명 완료 · 다음 응답까지 ${wait}초`;
-        await sleep(1000);
-        wait--;
-      }
-    }
+    if (done < total && !stopFlag) await sleep(1500 + Math.random() * 2000);
   }
   $('stop').classList.add('hidden');
   $('preview').disabled = false; $('load').disabled = false;
@@ -335,7 +341,7 @@ $('go').onclick = async () => {
   else if (stopFlag) msg('runMsg', 'warn', `멈췄어요. 지금까지 <b>${done}명</b>분이 제출됐어요.`);
 };
 
-$('stop').onclick = () => { stopFlag = true; $('runText').textContent = '지금 보내는 응답까지만 제출하고 멈출게요…'; };
+$('stop').onclick = () => { stopFlag = true; $('runText').textContent = '멈추는 중… (작성 중이던 응답은 제출하지 않아요)'; };
 </script>
 </body>
 </html>
